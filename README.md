@@ -32,3 +32,15 @@ A request publisher:
  roslaunch bme_ros_navigation world.launch world_file:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world'
 
  roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world'
+
+
+# Hector SLAM
+roslaunch bme_ros_navigation spawn_robot.launch
+roslaunch bme_ros_navigation hector_slam.launch
+
+## Corridor
+roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world' x:=-7 y:=2 map_file:='$(find bme_ros_navigation)/maps/corridor.yaml'
+roslaunch bme_ros_navigation hector_slam.launch
+
+## Corridor with features
+roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2 map_file:='$(find bme_ros_navigation)/maps/corridor.yaml'
