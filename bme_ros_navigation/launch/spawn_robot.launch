@@ -11,9 +11,6 @@
   <!-- Gazebo world file -->
   <arg name="world" default="$(find bme_ros_navigation)/worlds/world_modified.world"/>
 
-  <!-- Ground truth map file -->
-  <arg name="map_file" default="$(find bme_ros_navigation)/maps/map.yaml"/>
-
   <!-- Robot pose -->
   <!-- Inititalize the robot's position and orientation inside the world -->
   <arg name="x" default="2.5"/>
@@ -53,11 +50,6 @@
   <node pkg="hector_trajectory_server" type="hector_trajectory_server" respawn="false" name="hector_trajectory_server" output="screen">
     <param name="source_frame_name" value="base_footprint"/>
     <param name="target_frame_name" value="odom"/>
-  </node>
-
-  <!-- Map Server -->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">
-    <remap from="map" to="map_groundtruth"/>
   </node>
 
 </launch>
