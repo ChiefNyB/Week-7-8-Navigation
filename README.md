@@ -71,3 +71,39 @@ david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation/
 david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation/maps/saved_maps$ ls
 map.pgm  map.yaml
 ```
+
+# IMU Odometria szenzorfúzió
+ToDo
+
+# AMCL
+roslaunch bme_ros_navigation spawn_robot.launch
+
+roslaunch bme_ros_navigation amcl.launch map_file:='$(find bme_ros_navigation)/maps/map.yaml'
+
+roslaunch bme_ros_navigation amcl.launch
+
+roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
+
+roslaunch bme_ros_navigation amcl.launch map_file:='$(find bme_ros_navigation)/maps/saved_maps/corridor.yaml'
+
+# Navigation
+roslaunch bme_ros_navigation spawn_robot.launch
+roslaunch bme_ros_navigation navigation.launch
+
+rosservice call /move_base/clear_costmaps "{}"
+
+roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
+roslaunch bme_ros_navigation navigation.launch map_file:='$(find bme_ros_navigation)/maps/saved_maps/corridor.yaml'
+
+
+# Waypoint navigation
+
+# Waypoint navigation python code
+
+# RViz visual markers
+
+# Twist mux
+
+# Velocity smoother
+
+# Exploration
