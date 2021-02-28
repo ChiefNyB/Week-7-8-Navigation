@@ -55,3 +55,19 @@ roslaunch bme_ros_navigation gmapping.launch map_file:='$(find bme_ros_navigatio
 
 # Corridor with features
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
+
+# Save map
+
+rosrun map_server map_saver -f map
+
+```console
+david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation/maps/saved_maps$ rosrun map_server map_saver -f map
+[ INFO] [1614518022.653341900]: Waiting for the map
+[ INFO] [1614518022.875830700, 563.990000000]: Received a 800 X 800 map @ 0.025 m/pix
+[ INFO] [1614518022.875936200, 563.990000000]: Writing map occupancy data to map.pgm
+[ INFO] [1614518022.933453800, 564.011000000]: Writing map occupancy data to map.yaml
+[ INFO] [1614518022.933801100, 564.011000000]: Done
+
+david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation/maps/saved_maps$ ls
+map.pgm  map.yaml
+```
