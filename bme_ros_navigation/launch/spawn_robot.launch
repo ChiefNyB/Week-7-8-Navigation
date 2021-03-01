@@ -44,7 +44,9 @@
             -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
 
   <!-- Launch RViz -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true">
+    <remap from="initialpose" to="waypoint" />
+  </node>
 
   <!-- Launch trajectory server -->
   <node pkg="hector_trajectory_server" type="hector_trajectory_server" respawn="false" name="hector_trajectory_server" output="screen">
