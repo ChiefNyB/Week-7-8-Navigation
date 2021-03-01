@@ -5,6 +5,8 @@
 [image3]: ./assets/gazebo_corridor_features.png "Gazebo"
 [image4]: ./assets/gazebo_corridor_robot_1.png "Gazebo"
 [image5]: ./assets/gazebo_corridor_robot_2.png "Gazebo"
+[image6]: ./assets/tf_tree.png "TF"
+[image7]: ./assets/graph_1.png "Graph"
 
 # 7. - 8. hét - ROS navigáció
 
@@ -94,7 +96,7 @@ roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigatio
 Vegyük észre, hogy felülbíráljuk a robot kezdeti pozícióját is ezzel a paranccsal, nézzük meg mi történik nélküle.
 ![alt text][image5]
 
-A robot ilyekor nem a (0,0) pozícióban indul, mert a `spawn_robot.launch` fájlban ezek az alapértelmezett értékek:
+A robot ilyekor sem a (0,0) pozícióban indul, mert a `spawn_robot.launch` fájlban ezek az alapértelmezett értékek:
 ```xml
 ...
   <arg name="x" default="2.5"/>
@@ -162,12 +164,38 @@ Előre elkészítettem a grund truth térképet a `world_modified.world` és a `
 
 A `pgm_map_creator` alapértelmezetten a saját csomagjának a maps mappájába menti a térkép fájlokat. A `.pgm` fájlok egyszerű bitmap-ek, többek között megnyithatók a GIMP vagy Inkscape szoftverekkel.
 
- 
-
- roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world' x:=-7 y:=2 
-
 # IMU Odometria szenzorfúzió
-ToDo
+Vessünk még egy pillantást a `spawn_robot.launch` fájlra! Ebben ugyanis van pár változás a korábbiakhoz képest. Bekerült egy új node:
+```xml
+  <!-- Robot pose EKF for sensor fusion -->
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf">
+    <remap from="imu_data" to="/imu/data"/>
+    <param name="output_frame" value="odom"/>
+    <param name="base_footprint_frame" value="base_footprint"/>
+    <param name="freq" value="30.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+    <param name="gps_used" value="false"/>
+    <param name="debug" value="false"/>
+    <param name="self_diagnose" value="false"/>
+  </node>
+```
+És ezzel együtt változott egy picit a `mogi_bot.gazebo` fájl is:
+```xml
+<publishOdomTF>false</publishOdomTF>
+```
+
+Mostantól nem a Gazebo plugin csinálja a transzformációt az odom fix frame és a robot alváza között, hanem a szenzorfúzió. Ez sokkal jobban hasonlít egy valódi robotra, ahol a szenzor adatok (IMU és Odoemtria) megadott topicokba kerülnek, majd ezek alapján a szenzorfúzió hozza létre a transzformációt.
+Nézzük is meg a TF tree-t, ami a `rosrun rqt_tf_tree rqt_tf_tree` paranccsal tudok elindítani.
+![alt text][image6]
+
+Valamint a node-jaink összekötését is vizsgáljuk meg az `rqt_graph` paranccsal:
+![alt text][image7]
+
+Hibakeresés miatt, kapcsoljuk most vissza a `publishOdomTF`-et a Gazebo pluginban, és nézzük meg mi történik!
+
 
 # Hector SLAM
 roslaunch bme_ros_navigation spawn_robot.launch
@@ -240,6 +268,8 @@ https://github.com/bergercookie/follow_waypoints
 rosservice call /path_ready {}
 
 ## Patrol mode
+
+rosrun rqt_reconfigure rqt_reconfigure
 
 # Waypoint navigation C++ code
 
