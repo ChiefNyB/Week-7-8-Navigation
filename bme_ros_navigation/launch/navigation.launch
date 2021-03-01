@@ -21,10 +21,11 @@
     <!--rosparam file="$(find bme_ros_navigation)/config/base_local_planner_params.yaml" command="load" /-->
   </node>
 
+  <!-- Follow waypoints -->
+  <param name="wait_duration" value="2.0"/>
+  <param name="waypoints_to_follow_topic" value="/waypoint"/>
   <node pkg="follow_waypoints" type="follow_waypoints" name="follow_waypoints" output="screen">
     <param name="goal_frame_id" value="map"/>
-    <param name="wait_duration" value="2.0"/>
-    <remap from="initialpose" to="waypoint"/>
   </node>
 
 </launch>
