@@ -356,7 +356,7 @@ Visualization Manager:
           Marker Topic: /visualization_marker
           Name: Marker
           Namespaces:
-            add_markers: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -365,7 +365,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -389,7 +389,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.934094429016113
+      Distance: 23.49908447265625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
