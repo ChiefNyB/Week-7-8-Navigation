@@ -1,9 +1,10 @@
 [//]: # (Image References)
 
-[image1]: ./assets/mogi_bot_camera_1.png "Camera"
-[image2]: ./assets/mogi_bot_camera_2.png "Camera"
-[image3]: ./assets/mogi_bot_camera_3.png "Camera"
-[image4]: ./assets/mogi_bot_camera_4.png "Camera"
+[image1]: ./assets/gazebo_world.png "Gazebo"
+[image2]: ./assets/gazebo_corridor_empty.png "Gazebo"
+[image3]: ./assets/gazebo_corridor_features.png "Gazebo"
+[image4]: ./assets/gazebo_corridor_robot_1.png "Gazebo"
+[image5]: ./assets/gazebo_corridor_robot_2.png "Gazebo"
 
 # 7. - 8. hét - ROS navigáció
 
@@ -62,18 +63,84 @@ david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation$
     └── world_modified.world
 ```
 
+# Gazebo világok
+
+
+A fejezet során a már jól megismert `world_modified.world` Gazebo világot fogjuk használni, amit a következő paranccsal tudunk tesztelni:
+```console
+roslaunch bme_ros_navigation world.launch
+```
+![alt text][image1]
+
+Emellett azonban szükségünk lesz egy másik világra is, ami egy 20m hosszú folyosóból áll, ezen fogjuk tesztelni a térképezési algoritmusokat. Ennek két verzióját hoztam létre előre, egy üreset és egy olyat, ahol vannak objektumok a folyosón. Ezeket is ki tudjuk próbálni:
+```console
+roslaunch bme_ros_navigation world.launch world_file:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world'
+```
+![alt text][image2]
+```console
+roslaunch bme_ros_navigation world.launch world_file:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world'
+```
+![alt text][image3]
+
+A robotunkat is betölthetjük a világba, a korábbiakhoz hasonlóan a `spawn_robot.launch` segítségével. Robot betöltése az alap világba:
+```console
+roslaunch bme_ros_navigation spawn_robot.launch
+```
+És a világ megadásával betölthetjük a folyosóra is:
+```console
+roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world' x:=-7 y:=2
+```
+![alt text][image4]
+Vegyük észre, hogy felülbíráljuk a robot kezdeti pozícióját is ezzel a paranccsal, nézzük meg mi történik nélküle.
+![alt text][image5]
+
+A robot ilyekor nem a (0,0) pozícióban indul, mert a `spawn_robot.launch` fájlban ezek az alapértelmezett értékek:
+```xml
+...
+  <arg name="x" default="2.5"/>
+  <arg name="y" default="1.5"/>
+  <arg name="z" default="0"/>
+  <arg name="roll" default="0"/>
+  <arg name="pitch" default="0"/>
+  <arg name="yaw" default="0"/>
+...
+```
+
+Ennek megfelelően a másik folyosómodellre is elhelyezhető a robot:
+```console
+roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
+```
+
 # Ground truth térkép készítése
 
+Lehetőségünk van a Gezbo világunkból egy úgy nevezett ground truth térképet készíteni. Ehhez a `pgm_map_creator` csomagot használhatjuk.
+Ez nem egy hivatalos ROS csomag, így letölthető a tárgy GitHub oldaláról a catkin_workspace-be:
+```console
+git clone https://github.com/MOGI-ROS/pgm_map_creator
+```
+A csomag használatához be kell tennünk egy plugint a Gazebo világunkba, ezért csináljunk róla egy másolatot `world_map_creation.world` néven a `worlds/map_creation` mappába.
 
-world_map_creation.world
+Tegyük be a plugint a fájl végére a `</world>` tag elé:
 
-<plugin filename="libcollision_map_creator.so" name="collision_map_creator"/>
+```xml
+...
+    <plugin filename="libcollision_map_creator.so" name="collision_map_creator"/>
+  </world>
+</sdf>
+```
 
+A plugin használatához indítsuk el a világunk szimulációját, ehhez nincs szükség a grafikus frontendre, így elég a gzserver-t használnunk.
+
+```console
 gzserver src/Week-7-8-Navigation/bme_ros_navigation/worlds/world_map_creation.world
+```
 
+És egy másik terminálból indítsuk el a map creator-t:
+```console
 roslaunch pgm_map_creator request_publisher.launch
+```
 
-A request publisher:
+A `request_publisher` launch fájlban tudjuk megadni a térképünk méretét és felbontását.
 ```xml
 <?xml version="1.0" ?>
 <launch>
@@ -91,7 +158,11 @@ A request publisher:
 </launch>
 ```
 
- roslaunch bme_ros_navigation world.launch world_file:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world'
+Előre elkészítettem a grund truth térképet a `world_modified.world` és a `20m_corridor_empty.world` alapján, így ezeket használhatjuk a kezdőcsomagból.
+
+A `pgm_map_creator` alapértelmezetten a saját csomagjának a maps mappájába menti a térkép fájlokat. A `.pgm` fájlok egyszerű bitmap-ek, többek között megnyithatók a GIMP vagy Inkscape szoftverekkel.
+
+ 
 
  roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world' x:=-7 y:=2 
 
