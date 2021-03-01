@@ -17,8 +17,14 @@
     <rosparam file="$(find bme_ros_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find bme_ros_navigation)/config/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find bme_ros_navigation)/config/global_costmap_params.yaml" command="load" />
-    <!--rosparam file="$(find bme_ros_navigation)/config/dwa_local_planner_params.yaml" command="load" /-->
-    <rosparam file="$(find bme_ros_navigation)/config/base_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find bme_ros_navigation)/config/dwa_local_planner_params.yaml" command="load" />
+    <!--rosparam file="$(find bme_ros_navigation)/config/base_local_planner_params.yaml" command="load" /-->
+  </node>
+
+  <node pkg="follow_waypoints" type="follow_waypoints" name="follow_waypoints" output="screen">
+    <param name="goal_frame_id" value="map"/>
+    <param name="wait_duration" value="2.0"/>
+    <remap from="initialpose" to="waypoint"/>
   </node>
 
 </launch>
