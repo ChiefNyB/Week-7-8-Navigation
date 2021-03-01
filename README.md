@@ -31,7 +31,7 @@ A request publisher:
 
  roslaunch bme_ros_navigation world.launch world_file:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world'
 
- roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world'
+ roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world' x:=-7 y:=2 
 
 # IMU Odometria szenzorfúzió
 ToDo
@@ -101,6 +101,10 @@ roslaunch bme_ros_navigation navigation.launch map_file:='$(find bme_ros_navigat
 ToDo
 
 # Waypoint navigation
+
+https://github.com/bergercookie/follow_waypoints
+
+rosservice call /path_ready {}
 
 # Waypoint navigation python code
 
