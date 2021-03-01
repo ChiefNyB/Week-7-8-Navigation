@@ -1,8 +1,70 @@
-# Week-7-8-Navigation
+[//]: # (Image References)
+
+[image1]: ./assets/mogi_bot_camera_1.png "Camera"
+[image2]: ./assets/mogi_bot_camera_2.png "Camera"
+[image3]: ./assets/mogi_bot_camera_3.png "Camera"
+[image4]: ./assets/mogi_bot_camera_4.png "Camera"
+
+# 7. - 8. hét - ROS navigáció
+
+# Hova fogunk eljutni?
+
+<a href="https://youtu.be/8bnjzPTNLfc"><img height="400" src="./assets/youtube1.png"></a>
+<a href="https://youtu.be/-YCcQZmKJtY"><img height="400" src="./assets/youtube2.png"></a>
+
+# Tartalomjegyzék
+1. [Kezdőcsomag](#Kezdőcsomag)  
+2. [Szenzorok 1](#Szenzorok-1)  
+2.1. [Kamera](#Kamera)  
+2.2. [IMU](#IMU)  
+2.3. [GPS](#GPS)
+3. [GPS waypoint követés](#GPS-waypoint-követés)
+4. [Szenzorok 2](#Szenzorok-2)  
+4.1. [Lidar](#Lidar)  
+4.2. [Velodyne VLP16 lidar](#Velodyne-VLP16-lidar)  
+4.3. [RGBD kamera](#RGBD-kamera)
+5. [Képfeldolgozás ROS-ban OpenCV-vel](#Képfeldolgozás-ROS-ban-OpenCV-vel)
+
+# Kezdőcsomag
+A lecke kezdőcsomagja épít az előző fejezetekre, de egy külön GIT repositoryból dolgozunk, így nem feltétele az előző csomagok megléte.
+
+A kiindulási projekt tartalmazza a Gazebo világ szimulációját, az alap differenciálhajtású MOGI robotunk modelljét és szimulációját, a kamera, IMU és Lidar szimulációját, valamint az alap launchfájlokat és RViz fájlokat.
+
+A kezdőprojekt letöltése:
+```console
+git clone -b starter-branch https://github.com/MOGI-ROS/Week-7-8-Navigation.git
+```
+
+A kezdőprojekt tartalma a következő:
+```console
+david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation$ tree
+.
+├── CMakeLists.txt
+├── launch
+│   ├── check_urdf.launch
+│   ├── spawn_robot.launch
+│   ├── teleop.launch
+│   └── world.launch
+├── meshes
+│   ├── lidar.dae
+│   ├── mogi_bot.dae
+│   ├── vlp16.dae
+│   └── wheel.dae
+├── package.xml
+├── rviz
+│   ├── check_urdf.rviz
+│   └── mogi_world.rviz
+├── urdf
+│   ├── materials.xacro
+│   ├── mogi_bot.gazebo
+│   └── mogi_bot.xacro
+└── worlds
+    └── world_modified.world
+```
+
+# Ground truth térkép készítése
 
 
-
-# Ground truth térkép
 world_map_creation.world
 
 <plugin filename="libcollision_map_creator.so" name="collision_map_creator"/>
@@ -106,9 +168,13 @@ https://github.com/bergercookie/follow_waypoints
 
 rosservice call /path_ready {}
 
-# Waypoint navigation python code
+## Patrol mode
 
-# RViz visual markers
+# Waypoint navigation C++ code
+
+## RViz visual markers
+
+---
 
 # Twist mux
 
