@@ -45,7 +45,7 @@
 
   <!-- Launch RViz -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true">
-    <remap from="initialpose" to="waypoint" />
+    <!--remap from="initialpose" to="waypoint" /-->
   </node>
 
   <!-- Launch trajectory server -->
