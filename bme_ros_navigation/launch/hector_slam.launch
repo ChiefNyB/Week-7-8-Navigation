@@ -28,7 +28,7 @@
     <param name="pub_debug_output" value="true"/>
   </node>
 
-  <!-- Map Server -->
+  <!-- Ground truth map Server -->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">
     <remap from="map" to="map_groundtruth"/>
   </node>

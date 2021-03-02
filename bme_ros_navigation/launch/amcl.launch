@@ -3,9 +3,10 @@
 
   <!-- Map file for localization -->
   <arg name="map_file" default="$(find bme_ros_navigation)/maps/saved_maps/map.yaml"/>
+  <!-- It can be an environmental variable, too -->
+  <!--arg name="map_file" default="$(env AMCL_MAP_FILE)"/-->
 
   <!-- Map Server -->
-  <!--arg name="map_file" default="$(env AMCL_MAP_FILE)"/-->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">
   </node>
 
@@ -14,7 +15,6 @@
   <arg name="initial_pose_y"  default="0.0"/>
   <arg name="initial_pose_a"  default="1.57"/>
   <node name="amcl" pkg="amcl" type="amcl" output="screen">
-    <!--remap from="scan" to="my_robot/laser/scan"/-->
     <param name="odom_frame_id" value="odom"/>
     <param name="odom_model_type" value="diff-corrected"/>
     <param name="base_frame_id" value="base_link"/>
@@ -24,10 +24,11 @@
     <param name="initial_pose_x" value="$(arg initial_pose_x)"/>
     <param name="initial_pose_y" value="$(arg initial_pose_y)"/>
     <param name="initial_pose_a" value="$(arg initial_pose_a)"/>
+    <!-- Parameters for inital particle distribution -->
     <param name="initial_cov_xx" value="9.0"/>
     <param name="initial_cov_yy" value="9.0"/>
     <param name="initial_cov_aa" value="9.8"/>
-    <!-- dynamically adjusts particles for every iteration -->
+    <!-- Dynamically adjusts particles for every iteration -->
     <param name="min_particles" value="500"/>
     <param name="max_particles" value="2000"/>
     <!-- Perform update parameters -->
@@ -40,7 +41,7 @@
     <param name="odom_alpha3" value="0.3"/>
     <param name="odom_alpha4" value="0.1"/>
     <param name="odom_alpha5" value="0.1"/>
-
+    <!-- Transform tolerance needed on slower machines -->
     <param name="transform_tolerance" value="1.0"/>
   </node>
 
