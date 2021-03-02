@@ -7,26 +7,31 @@
 [image5]: ./assets/gazebo_corridor_robot_2.png "Gazebo"
 [image6]: ./assets/tf_tree.png "TF"
 [image7]: ./assets/graph_1.png "Graph"
+[image8]: ./assets/roswtf.png "roswtf"
 
 # 7. - 8. hét - ROS navigáció
 
 # Hova fogunk eljutni?
 
-<a href="https://youtu.be/8bnjzPTNLfc"><img height="400" src="./assets/youtube1.png"></a>
+<a href="https://youtu.be/8bnjzPTNLfc"><img height="400" src="./assets/youtube1.png"></a>  
 <a href="https://youtu.be/-YCcQZmKJtY"><img height="400" src="./assets/youtube2.png"></a>
 
 # Tartalomjegyzék
 1. [Kezdőcsomag](#Kezdőcsomag)  
-2. [Szenzorok 1](#Szenzorok-1)  
-2.1. [Kamera](#Kamera)  
-2.2. [IMU](#IMU)  
-2.3. [GPS](#GPS)
-3. [GPS waypoint követés](#GPS-waypoint-követés)
-4. [Szenzorok 2](#Szenzorok-2)  
-4.1. [Lidar](#Lidar)  
-4.2. [Velodyne VLP16 lidar](#Velodyne-VLP16-lidar)  
-4.3. [RGBD kamera](#RGBD-kamera)
-5. [Képfeldolgozás ROS-ban OpenCV-vel](#Képfeldolgozás-ROS-ban-OpenCV-vel)
+2. [Gazebo világok](#Gazebo-világok)  
+3. [Ground truth térkép készítése](#Ground-truth-térkép-készítése)
+4. [IMU és odometria szenzorfúzió](#IMU-és-odometria-szenzorfúzió)  
+5. [Mapping](#Mapping)  
+5.1. [Hector SLAM](#Hector-SLAM)  
+5.2. [GMapping](#GMapping)  
+5.3. [Map saver](#Map-saver)
+6. [Lokalizáció](#Lokalizáció)  
+6.1. [AMCL](#AMCL)
+7. [Navigáció](#Navigáció)  
+7.1. [Recovery akciók](#Recovery-akciók)
+8. [Waypoint navigáció](#Waypoint-navigáció)  
+8.1. [Grafikusan a follow_waypoints csomaggal](#Grafikusan-a-follow_waypoints-csomaggal)  
+8.2. [Waypoint navigáció C++ ROS node-ból](#Waypoint-navigáció-C++-ROS-node-ból)
 
 # Kezdőcsomag
 A lecke kezdőcsomagja épít az előző fejezetekre, de egy külön GIT repositoryból dolgozunk, így nem feltétele az előző csomagok megléte.
@@ -164,7 +169,7 @@ Előre elkészítettem a grund truth térképet a `world_modified.world` és a `
 
 A `pgm_map_creator` alapértelmezetten a saját csomagjának a maps mappájába menti a térkép fájlokat. A `.pgm` fájlok egyszerű bitmap-ek, többek között megnyithatók a GIMP vagy Inkscape szoftverekkel.
 
-# IMU Odometria szenzorfúzió
+# IMU és odometria szenzorfúzió
 Vessünk még egy pillantást a `spawn_robot.launch` fájlra! Ebben ugyanis van pár változás a korábbiakhoz képest. Bekerült egy új node:
 ```xml
   <!-- Robot pose EKF for sensor fusion -->
@@ -196,30 +201,213 @@ Valamint a node-jaink összekötését is vizsgáljuk meg az `rqt_graph` parancc
 
 Hibakeresés miatt, kapcsoljuk most vissza a `publishOdomTF`-et a Gazebo pluginban, és nézzük meg mi történik!
 
+A robotunk furcsán ugrál az RVizben megjelenítva, de szerencsére ennél nagyobb baj nem történt:
+![alt text][image8]
 
-# Hector SLAM
+Azokban az esetekben, amikor sejtjük, hogy valami nincs rendben a TF-fel, sokat segít a `roswtf` parancssoros tool, ami ebben az esetben is azonnal észrevette a hibát:
+```console
+...
+Found 1 error(s).
+
+ERROR TF multiple authority contention:
+ * node [/robot_pose_ekf] publishing transform [base_footprint] with parent [odom] already published by node [/gazebo]
+ * node [/gazebo] publishing transform [base_footprint] with parent [odom] already published by node [/robot_pose_ekf]
+```
+
+A végén ne felejtsük el visszaállítani a Gazebo plugint!
+
+# Mapping
+
+Térképezésre általában SLAM (simultaneous localization and mapping) algoritmusokat használunk, amik képesek egyszerre létrehozni a környzet térképét és meghatározni a robot pozícióját és orientációját a térképen (lokalizáció).
+Az elmúlt években egyre inkább terjednek a mono, stereo vagy RGBD kamerát használó SLAM algoritmusok, de mi most két Lidart használó algoritmust próbálunk ki.
+
+## Hector SLAM
+
+A Hector SLAM a Darmstadt-i egyetem fejlesztése, nagyon egyszerű használni, akár szabd kézben tartott Lidarral is, ugyanis pusztán csak a Lidar méréseit használja a SLAM probléma megoldása során.
+Ez az előnye egyben a hátránya is, mivel nem használja a robot odometriáját, így speciális körülmények között nem használható, látunk is erre példát az üres folyosó esetén.
+
+Előtte azonban próbáljuk ki a Hector SLAM-et a már megszokott Gazebo világunkon.
+
+Hozzuk létre a hector_slam.launch fájlt:
+```xml
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Ground truth map file -->
+  <arg name="map_file" default="$(find bme_ros_navigation)/maps/map_hector.yaml"/>
+
+  <node pkg="hector_mapping" type="hector_mapping" name="hector_mapping" output="screen">
+    <param name="base_frame" value="base_link" />
+    <param name="odom_frame" value="odom"/>
+    <param name="output_timing" value="false"/>
+    <param name="use_tf_scan_transformation" value="true"/>
+    <param name="use_tf_pose_start_estimate" value="false"/>
+    <param name="scan_topic" value="scan"/>
+    <!-- Map size / start point -->
+    <param name="map_resolution" value="0.025"/>
+    <param name="map_size" value="2048"/>
+    <param name="map_start_x" value="0.5"/>
+    <param name="map_start_y" value="0.5" />
+    <!--param name="laser_z_min_value" value="-2.5" /-->
+    <!--param name="laser_z_max_value" value="3.5" /-->
+    <!-- Map update parameters -->
+    <param name="update_factor_free" value="0.4"/>
+    <param name="update_factor_occupied" value="0.7" />    
+    <param name="map_update_distance_thresh" value="0.6"/>
+    <param name="map_update_angle_thresh" value="0.9" />
+    <param name="pub_map_odom_transform" value="true"/>
+    <param name="pub_drawings" value="true"/>
+    <param name="pub_debug_output" value="true"/>
+  </node>
+
+  <!-- Ground truth map Server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">
+    <remap from="map" to="map_groundtruth"/>
+  </node>
+
+</launch>
+```
+
+Majd indítsuk el a világ és a robot szimulációját:
+
+```console
 roslaunch bme_ros_navigation spawn_robot.launch
+```
+
+A Hector SLAM algoritumust:
+```console
 roslaunch bme_ros_navigation hector_slam.launch
+```
 
-## Corridor
+Valamint a távirányítót:
+```console
+roslaunch bme_ros_navigation teleop.launch
+```
+
+### Üres folyosó
+
+Próbáljuk ki a Hector SLAM-et az üres folyosón:
+```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world' x:=-7 y:=2 
+```
+
+```console
 roslaunch bme_ros_navigation hector_slam.launch map_file:='$(find bme_ros_navigation)/maps/corridor_hector.yaml'
+```
 
-## Corridor with features
+### Folyosó tárgyakkal
+
+És most nézzük meg tárgyakkal:
+```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
+```
 
-# GMapping
+```console
+roslaunch bme_ros_navigation hector_slam.launch map_file:='$(find bme_ros_navigation)/maps/corridor_hector.yaml'
+```
+
+## GMapping
+
+A másik SLAM algoritmus, amit kipróbálunk a GMapping. A GMapping nem csak a Lidar jeleit használja, hanem a robot odometriáját is!
+
+```xml
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Ground truth map file -->
+  <arg name="map_file" default="$(find bme_ros_navigation)/maps/map.yaml"/>
+
+  <node pkg="gmapping" type="slam_gmapping" name="gmapping" output="screen" >
+    <param name="odom_frame" value="odom" />
+    <param name="base_frame" value="base_link" />
+    <!-- Process 1 out of every this many scans (set it to a higher number to skip more scans)  -->
+    <param name="throttle_scans" value="1"/>
+    <param name="map_update_interval" value="3.0"/> <!-- default: 5.0 -->
+
+    <!-- The maximum usable range of the laser. A beam is cropped to this value.  -->
+    <param name="maxUrange" value="5.0"/>
+    <!-- The maximum range of the sensor. If regions with no obstacles within the range of the sensor should appear as free space in the map, set maxUrange < maximum range of the real sensor <= maxRange -->
+    <param name="maxRange" value="5.0"/>
+
+    <param name="sigma" value="0.05"/>
+    <param name="kernelSize" value="1"/>
+    <param name="lstep" value="0.05"/>
+    <param name="astep" value="0.05"/>
+    <param name="iterations" value="5"/>
+    <param name="lsigma" value="0.075"/>
+    <param name="ogain" value="3.0"/>
+    <param name="minimumScore" value="30.0"/>
+    <!-- Number of beams to skip in each scan. -->
+    <param name="lskip" value="0"/>
+    <param name="srr" value="0.01"/>
+    <param name="srt" value="0.02"/>
+    <param name="str" value="0.01"/>
+    <param name="stt" value="0.02"/>
+
+    <!-- Process a scan each time the robot translates this far  -->
+    <param name="linearUpdate" value="0.1"/>
+
+    <!-- Process a scan each time the robot rotates this far  -->
+    <param name="angularUpdate" value="0.1"/>
+    <param name="temporalUpdate" value="1.0"/>
+    <param name="resampleThreshold" value="0.5"/>
+
+    <!-- Number of particles in the filter. default 30        -->
+    <param name="particles" value="30"/>
+
+    <!-- Initial map size  -->
+    <param name="xmin" value="-10.0"/>
+    <param name="ymin" value="-10.0"/>
+    <param name="xmax" value="10.0"/>
+    <param name="ymax" value="10.0"/>
+
+    <!-- Processing parameters (resolution of the map)  -->
+    <param name="delta" value="0.025"/>
+    <param name="llsamplerange" value="0.01"/>
+    <param name="llsamplestep" value="0.01"/>
+    <param name="lasamplerange" value="0.005"/>
+    <param name="lasamplestep" value="0.005"/>
+  </node> 
+
+  <!-- Ground truth map Server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">
+    <remap from="map" to="map_groundtruth"/>
+  </node>
+
+</launch>
+```
+
+```console
 roslaunch bme_ros_navigation spawn_robot.launch
+```
+
+```console
 roslaunch bme_ros_navigation gmapping.launch
+```
 
-# Corridor
+### Üres folyosó
+
+Próbáljuk ki a GMappinget üres folyosón:
+```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world' x:=-7 y:=2
+```
+
+```console
 roslaunch bme_ros_navigation gmapping.launch map_file:='$(find bme_ros_navigation)/maps/corridor.yaml'
+```
 
-# Corridor with features
+### Folyosó tárgyakkal
+Ésnézzük meg ezt is tárgyakkal:
+```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
+```
 
-# Save map
+## Map saver
+
+Ha szeretnénk elmenteni a SLAM algoritmus által létrehozott térképet, akkor a map_server csomag map_saver node-ját tudjuk erre a célra használni. A map_server-rel találkoztunk már korábban is, ez adta a ground truth térképünket.
+
+A map_saver abba a mappába menti a térképet, ahonnan indítjuk!
+Csináljunk erre egy saved_maps mappát a maps-en belül.
 
 rosrun map_server map_saver -f map
 
@@ -236,8 +424,60 @@ map.pgm  map.yaml
 ```
 
 
+# Lokalizáció
+## AMCL
 
-# AMCL
+```xml
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Map file for localization -->
+  <arg name="map_file" default="$(find bme_ros_navigation)/maps/saved_maps/map.yaml"/>
+  <!-- It can be an environmental variable, too -->
+  <!--arg name="map_file" default="$(env AMCL_MAP_FILE)"/-->
+
+  <!-- Map Server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">
+  </node>
+
+  <!-- AMCL Node -->
+  <arg name="initial_pose_x"  default="0.0"/>
+  <arg name="initial_pose_y"  default="0.0"/>
+  <arg name="initial_pose_a"  default="1.57"/>
+  <node name="amcl" pkg="amcl" type="amcl" output="screen">
+    <param name="odom_frame_id" value="odom"/>
+    <param name="odom_model_type" value="diff-corrected"/>
+    <param name="base_frame_id" value="base_link"/>
+    <param name="global_frame_id" value="map"/>
+    <param name="scan_topic" value="scan"/>
+    <!-- If you choose to define initial pose here -->
+    <param name="initial_pose_x" value="$(arg initial_pose_x)"/>
+    <param name="initial_pose_y" value="$(arg initial_pose_y)"/>
+    <param name="initial_pose_a" value="$(arg initial_pose_a)"/>
+    <!-- Parameters for inital particle distribution -->
+    <param name="initial_cov_xx" value="9.0"/>
+    <param name="initial_cov_yy" value="9.0"/>
+    <param name="initial_cov_aa" value="9.8"/>
+    <!-- Dynamically adjusts particles for every iteration -->
+    <param name="min_particles" value="500"/>
+    <param name="max_particles" value="2000"/>
+    <!-- Perform update parameters -->
+    <param name="update_min_d" value="0.1"/>
+    <param name="update_min_a" value="0.1"/>
+    <param name="laser_model_type" value="likelihood_field"/>
+    <param name="laser_max_range" value="-1.0"/>
+    <param name="odom_alpha1" value="0.1"/>
+    <param name="odom_alpha2" value="0.1"/>
+    <param name="odom_alpha3" value="0.3"/>
+    <param name="odom_alpha4" value="0.1"/>
+    <param name="odom_alpha5" value="0.1"/>
+    <!-- Transform tolerance needed on slower machines -->
+    <param name="transform_tolerance" value="1.0"/>
+  </node>
+
+</launch>
+```
+
 roslaunch bme_ros_navigation spawn_robot.launch
 
 roslaunch bme_ros_navigation amcl.launch map_file:='$(find bme_ros_navigation)/maps/map.yaml'
@@ -248,7 +488,34 @@ roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigatio
 
 roslaunch bme_ros_navigation amcl.launch map_file:='$(find bme_ros_navigation)/maps/saved_maps/corridor.yaml'
 
-# Navigation
+# Navigáció
+
+```xml
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Map file for localization -->
+  <arg name="map_file" default="$(find bme_ros_navigation)/maps/saved_maps/map.yaml"/>
+
+  <!-- Launch our Gazebo world -->
+  <include file="$(find bme_ros_navigation)/launch/amcl.launch">
+    <!-- all vars that included.launch requires must be set -->
+    <arg name="map_file" value="$(arg map_file)" />
+  </include>
+
+  <!-- Move Base -->
+  <node name="move_base" pkg="move_base" type="move_base" respawn="false" output="screen">
+    <rosparam file="$(find bme_ros_navigation)/config/move_base_params.yaml" command="load" />
+    <rosparam file="$(find bme_ros_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find bme_ros_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find bme_ros_navigation)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find bme_ros_navigation)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find bme_ros_navigation)/config/dwa_local_planner_params.yaml" command="load" />
+  </node>
+
+</launch>
+```
+
 roslaunch bme_ros_navigation spawn_robot.launch
 roslaunch bme_ros_navigation navigation.launch
 
@@ -258,22 +525,39 @@ rosservice call /move_base/clear_costmaps "{}"
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
 roslaunch bme_ros_navigation navigation.launch map_file:='$(find bme_ros_navigation)/maps/saved_maps/corridor.yaml'
 
-## Recovery
+## Recovery akciók
 ToDo
 
-# Waypoint navigation
+# Waypoint navigáció
+
+
+
+## Grafikusan a follow_waypoints csomaggal
 
 https://github.com/bergercookie/follow_waypoints
 
+```xml
+  <!-- Follow waypoints -->
+  <param name="wait_duration" value="2.0"/>
+  <param name="waypoints_to_follow_topic" value="/waypoint"/>
+  <node pkg="follow_waypoints" type="follow_waypoints" name="follow_waypoints" output="screen">
+    <param name="goal_frame_id" value="map"/>
+  </node>
+```
+
+```xml
+<remap from="initialpose" to="waypoint" />
+```
+
 rosservice call /path_ready {}
 
-## Patrol mode
+### Patrol mode
 
 rosrun rqt_reconfigure rqt_reconfigure
 
-# Waypoint navigation C++ code
+## Waypoint navigáció C++ ROS node-ból
 
-## RViz visual markers
+### RViz visual markers
 
 ---
 
