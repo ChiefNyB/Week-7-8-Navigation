@@ -48,6 +48,11 @@
 [image46]: ./assets/navigation_corridor_2.png "navigation"
 [image47]: ./assets/navigation_corridor_3.png "navigation"
 [image48]: ./assets/navigation_corridor_4.png "navigation"
+[image49]: ./assets/waypoint_1.png "waypoint"
+[image50]: ./assets/waypoint_2.png "waypoint"
+[image51]: ./assets/waypoint_3.png "waypoint"
+[image52]: ./assets/waypoint_4.png "waypoint"
+[image53]: ./assets/waypoint_5.png "waypoint"
 
 # 7. - 8. hét - ROS navigáció
 
@@ -859,11 +864,17 @@ Ezután már kijelölhetjük az uticélt:
 
 # Waypoint navigáció
 
+Waypoint navigáció esetén nem kézzel fogjuk megadni a következő célpontot, miután a robot elérte az előzőt, hanem előre definiálujuk a waypointokat, majd a robot autonóm módon végigjárja ezeket a pontokat.
 
+A waypoint navigációhoz [ezt a csomagot](https://github.com/MOGI-ROS/follow_waypoints) fogjuk használni.
+Töltsük le a catkin workspace-be és fordítsuk újra:
+```console
+git clone https://github.com/MOGI-ROS/follow_waypoints
+```
 
 ## Grafikusan a follow_waypoints csomaggal
 
-https://github.com/bergercookie/follow_waypoints
+Adjuk hozzá a csomagot a `navigation.launch` fájlunkhoz:
 
 ```xml
   <!-- Follow waypoints -->
@@ -874,15 +885,46 @@ https://github.com/bergercookie/follow_waypoints
   </node>
 ```
 
+Ahhoz, hogy waypointokat adjunk meg az RViz-en keresztül a pose estimate eszközt fogjuk használni (amit korábban arra használtunk, hogy az AMCL kezdeti pozicióját adjuk meg vele). Ezúttal ez az eszköz waypointokat fog szolgáltatni nekünk, amiket a `waypoint` topikba szeretnénk küldeni. Ehhez remap-eljük az RViz topic-ját a `spawn_robot.launch` fájlban.
+
 ```xml
 <remap from="initialpose" to="waypoint" />
 ```
 
+Indítsuk el a szimulációt és a navigációt:
+```console
+roslaunch bme_ros_navigation spawn_robot.launch
+```
+```console
+roslaunch bme_ros_navigation navigation.launch
+```
+
+Majd adjuk meg a waypointokat az RViz segítségével:
+![alt text][image49]
+
+Ha a waypointokat letettük a waypointok követését a következő service hívással tudjuk elindítani:
+```console
 rosservice call /path_ready {}
+```
+![alt text][image50]
 
 ### Patrol mode
+A `follow_waypoints` csomag lehetővé teszi a patrol módot is, tehát a robotunk az utolsó waypoint elérése után kezdi az útvonalat elölről. A patrol módot legegyszerűbben az `rqt_reconfigure` segtségével tudjuk aktiválni.
 
+```console
 rosrun rqt_reconfigure rqt_reconfigure
+```
+![alt text][image51]
+
+Jelöljük ki a waypointokat:
+![alt text][image52]
+
+Majd indítsuk el a navigációt:
+```console
+rosservice call /path_ready {}
+```
+![alt text][image53]
+
 
 ## Waypoint navigáció C++ ROS node-ból
 
