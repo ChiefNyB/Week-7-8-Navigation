@@ -53,6 +53,7 @@
 [image51]: ./assets/waypoint_3.png "waypoint"
 [image52]: ./assets/waypoint_4.png "waypoint"
 [image53]: ./assets/waypoint_5.png "waypoint"
+[image54]: ./assets/waypoint_6.png "waypoint"
 
 # 7. - 8. hét - ROS navigáció
 
@@ -928,6 +929,9 @@ rosservice call /path_ready {}
 
 ## Waypoint navigáció C++ ROS node-ból
 
+A navigációs stacket azonban nem csak az RViz felületén tudjuk irányítani, hanem a `move_base` C++ vagy Python API-ján keresztül is.
+
+Hozzuk létre a `nav_goals.cpp` fájlt a `src` mappában:
 
 ```cpp
 #include "actionlib/client/simple_action_client.h"
@@ -993,12 +997,15 @@ int main(int argc, char **argv) {
 }
 ```
 
+Adjuk hozzá a fájlunkat a CMakeLists.txt-hez:
 ```cmake
 add_executable(nav_goals src/nav_goals.cpp)
 target_link_libraries(nav_goals ${catkin_LIBRARIES})
 ```
 
 ### RViz visual markers
+
+Mielőtt még kipróbálnánk, készítsünk egy másik saját ROS node-ot is, `add_markers.cpp` névvel, ezt használjuk majd arra, hogy megjelenítse a célpontunkat az RViz-ben:
 
 ```cpp
 #include "nav_msgs/Odometry.h"
@@ -1111,17 +1118,25 @@ int main(int argc, char **argv) {
 }
 ```
 
+És természetesen ezt is adjuk hozzá a CMakeLists.txt-hez:
 ```cmake
 add_executable(add_markers src/add_markers.cpp)
 target_link_libraries(add_markers ${catkin_LIBRARIES})
 ```
 
----
+Ezután fordítsuk újra a catkin workspace-t, majd
+```console
+source devel/setup.bash
+```
 
-# Twist mux
-
-# Velocity smoother
-
-# Exploration
-
-# Turtlebot 3
+És próbáljuk ki a node-unkat. Ehhez 3 launchfájlt fogunk összesen elindítani:
+```console
+roslaunch bme_ros_navigation spawn_robot.launch
+```
+```console
+roslaunch bme_ros_navigation navigation.launch
+```
+```console
+roslaunch bme_ros_navigation manual_waypoints.launch
+```
+![alt text][image54]
