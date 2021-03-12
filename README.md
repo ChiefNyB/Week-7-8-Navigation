@@ -150,7 +150,7 @@ roslaunch bme_ros_navigation world.launch
 ```
 ![alt text][image1]
 
-Emellett azonban szükségünk lesz egy másik világra is, ami egy 20m hosszú folyosóból áll, ezen fogjuk tesztelni a térképezési algoritmusokat. Ennek két verzióját hoztam létre előre, egy üreset és egy olyat, ahol vannak objektumok a folyosón. Ezeket is ki tudjuk próbálni:
+Emellett azonban szükségünk lesz egy másik világra is, ami egy 20m hosszú folyosóból áll, ezen fogjuk tesztelni a térképezési algoritmusokat. Ennek két verzióját hoztam létre előre, egy ürest és egy olyat, ahol vannak objektumok a folyosón. Ezeket is ki tudjuk próbálni:
 ```console
 roslaunch bme_ros_navigation world.launch world_file:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world'
 ```
@@ -189,7 +189,7 @@ Ennek megfelelően a másik folyosómodellre is elhelyezhető a robot:
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
 ```
 
-Próbáljuk ki a távirányítót is, mert kiegészítjük egy új hasznos funkcióval ebben a fejezetben, és ez az `Interactive marker twist server` csomag hasznáalata, amit így tudtok telepíteni:
+Próbáljuk ki a távirányítót is, mert kiegészítjük egy új hasznos funkcióval ebben a fejezetben, és ez az `Interactive marker twist server` csomag használata, amit így tudtok telepíteni:
 ```console
 sudo apt install ros-$(rosversion -d)-interactive-marker-twist-server
 ```
@@ -298,7 +298,7 @@ A végén ne felejtsük el visszaállítani a Gazebo plugint!
 
 # Mapping
 
-Térképezésre általában SLAM (simultaneous localization and mapping) algoritmusokat használunk, amik képesek egyszerre létrehozni a környzet térképét és meghatározni a robot pozícióját és orientációját a térképen (lokalizáció).
+Térképezésre általában SLAM (simultaneous localization and mapping) algoritmusokat használunk, amik képesek egyszerre létrehozni a környezet térképét és meghatározni a robot pozícióját és orientációját a térképen (lokalizáció).
 Az elmúlt években egyre inkább terjednek a mono, stereo vagy RGBD kamerát használó SLAM algoritmusok, de mi most két Lidart használó algoritmust próbálunk ki.
 
 ## Hector SLAM
@@ -364,7 +364,7 @@ Majd indítsuk el a világ és a robot szimulációját:
 roslaunch bme_ros_navigation spawn_robot.launch
 ```
 
-A Hector SLAM algoritumust:
+A Hector SLAM algoritmust:
 ```console
 roslaunch bme_ros_navigation hector_slam.launch
 ```
@@ -410,7 +410,7 @@ Vezessük végig a robotot a folyosón:
 
 ![alt text][image16]
 
-Láthatjuk, hogy a pusztán a lidar jeleire támaszkodó algoritmus jelentős hibát (kb 10m) szedett össze, a folyosón az 5m érzéeklési távolsággal rendelkező lidar használata során. Mekkora lenne a hiba egy 30m hosszú folyosón?
+Láthatjuk, hogy a pusztán a lidar jeleire támaszkodó algoritmus jelentős hibát (kb 10m) szedett össze, a folyosón az 5m érzékelési távolsággal rendelkező lidar használata során. Mekkora lenne a hiba egy 30m hosszú folyosón?
 
 ### Folyosó tárgyakkal
 
@@ -595,7 +595,7 @@ map.pgm  map.yaml
 
 # Lokalizáció
 
-Lokalizáció esetén a robotunk pontos pozicióját és orientációját határottuk meg egy ismert térképen. Ehhez a ROS [AMCL (Advanced Monte Carlo Localization) csomagját](http://wiki.ros.org/amcl) fogjuk használni. Ez a lokalizációs módszer egy úgynevezett particle filter algoritmus, ami induláskor véletlenszerűen "szór szét" particle-öket a téképen, és a lidar szenzoradataiból próbálja kiszűrni azokat a lehetséges particle-öket, amikkel konzisztensek a szenzoradataink. Ahogy mozgunk a robottal a lehetséges particle-ök a robot valós helyéhez konvergálnak.
+Lokalizáció esetén a robotunk pontos pozícióját és orientációját határoztuk meg egy ismert térképen. Ehhez a ROS [AMCL (Advanced Monte Carlo Localization) csomagját](http://wiki.ros.org/amcl) fogjuk használni. Ez a lokalizációs módszer egy úgynevezett particle filter algoritmus, ami induláskor véletlenszerűen "szór szét" particle-öket a téképen, és a lidar szenzoradataiból próbálja kiszűrni azokat a lehetséges particle-öket, amikkel konzisztensek a szenzoradataink. Ahogy mozgunk a robottal a lehetséges particle-ök a robot valós helyéhez konvergálnak.
 
 ## AMCL
 
@@ -713,7 +713,7 @@ Ez addig fokozódik, amíg új particle-ök jelennek meg:
 És egy idő után képes sikeresen lokalizálni a robotunkat:
 ![alt text][image33]
 
-Téves konvergálást úgy tudunk a legjobban elkerülni, ha van valamennyi elképzelésünk a robotunk kezdeti poziciójáról és orientációjáról. Ezeket a launch fájlban megadhatjuk, és csökkenthetjük a kezdeti részecskék eloszlását, erről [bővebben az AMCL wiki oldalán olvashattok](http://wiki.ros.org/amcl#Parameters):
+Téves konvergálást úgy tudunk a legjobban elkerülni, ha van valamennyi elképzelésünk a robotunk kezdeti pozíciójáról és orientációjáról. Ezeket a launch fájlban megadhatjuk, és csökkenthetjük a kezdeti részecskék eloszlását, erről [bővebben az AMCL wiki oldalán olvashattok](http://wiki.ros.org/amcl#Parameters):
 
 ```xml
     <!-- If you choose to define initial pose here -->
@@ -738,16 +738,16 @@ A navigációs stack működik tetszőleges SLAM vagy lokalizációs csomaggal, 
 
 A navigációs stacket úgy tervezték, hogy könnyen használható legyen különböző lokális és globális útvonaltervezővel. A globális tervezéshez a [NavfnROS](http://wiki.ros.org/navfn) csomagot, a lokális tervezéshez pedig a [DWAPlannerROS](http://wiki.ros.org/dwa_local_planner) csomagot fogjuk használni.
 
-A ROS navigációs stackjének működése kapcsán érdemes végignézni a [hivatalos tutorialok](http://wiki.ros.org/navigation/Tutorials)at, valamint a [ROS Navigation Tuning Guide](http://kaiyuzheng.me/documents/navguide.pdf)-ot Kaiyu Zheng-től.
+A ROS navigációs stackjének működése kapcsán érdemes végig nézni a [hivatalos tutorialok](http://wiki.ros.org/navigation/Tutorials)at, valamint a [ROS Navigation Tuning Guide](http://kaiyuzheng.me/documents/navguide.pdf)-ot Kaiyu Zheng-től.
 
 A navigációs stack-et a [`move_base`](http://wiki.ros.org/move_base) node indítja el, és ez a belső felépítése:
 ![alt text][image35]
 
 A fő részei tehát:
-1) Globális costmap, gyakorlatilag ez a térkép, a robot környezetében lévő statikus akadályok szerepelnek rajta, amiket megnövelünk, hogy elkerüljük a potenciális ütközést velük. A robot a navigáció során nem használja közvetlenül a robot szenzorait ennek a firssítéséhez.
+1) Globális costmap, gyakorlatilag ez a térkép, a robot környezetében lévő statikus akadályok szerepelnek rajta, amiket megnövelünk, hogy elkerüljük a potenciális ütközést velük. A robot a navigáció során nem használja közvetlenül a robot szenzorjait ennek a frissítéséhez.
 2) A globális útvonaltervező az előbbi global costmap-et használja fel a tervezéshez, odafigyelve arra, hogy a robot fizikai méretének megfelelően tervezze meg az útvonalat.
 3) Lokális costmap, ezen szerepelnek a robot környezetében lévő dinamikus akadályok, például állatok és emberek, de a térképhez képest történt változások is a lokális costmapen jelennek meg. A lokális costmap mindig az aktuális szenzoradatok alapján frissül.
-4) A lokális útvonaltervező célja a globális ütvonal követése a dinamikus akadályok elkerülése mellett. Tehát a robot képes kikerülni az akadályt majd visszatérni a globális útvonaltervhez.
+4) A lokális útvonaltervező célja a globális útvonal követése a dinamikus akadályok elkerülése mellett. Tehát a robot képes kikerülni az akadályt majd visszatérni a globális útvonaltervhez.
 
 Készítsük el a `navigation.launch` fájlt, és nézzük meg a tartalmát:
 
@@ -823,7 +823,7 @@ Ha ezek után sem tudná folytatni a robot a tervezett útvonalát, akkor valós
 sudo apt install ros-$(rosversion -d)-move-slow-and-clear
 ```
 
-Ha ez sem vált volna be, akkor végső próbálkozásként megpróbálunk forogni a robottal. Ez egyébként a navigációs stack alapértelmezett recovery mechanizmusa, ami azonban a gyakolratban egy valós roboton nagyon nem praktikus.
+Ha ez sem vált volna be, akkor végső próbálkozásként megpróbálunk forogni a robottal. Ez egyébként a navigációs stack alapértelmezett recovery mechanizmusa, ami azonban a gyakorlatban egy valós roboton nagyon nem praktikus.
 
 Próbáljuk ki a navigációt, ezúttal nem is lesz szükségünk a távirányítóra:
 ```console
@@ -833,7 +833,7 @@ roslaunch bme_ros_navigation spawn_robot.launch
 roslaunch bme_ros_navigation navigation.launch
 ```
 
-Induláskor, ahogy korábban már láttuk, az AMCL még nem lokalizálta a robot. A falak mentén a világos szürke sávok a globális costmap megjelenjtése.
+Induláskor, ahogy korábban már láttuk, az AMCL még nem lokalizálta a robot. A falak mentén a világos szürke sávok a globális costmap megjelenítése.
 ![alt text][image38]
 Ezen segíthetünk a távirányítóval, vagy adhatunk egy célpontot a navigációnak.
 ![alt text][image39]
@@ -858,14 +858,14 @@ roslaunch bme_ros_navigation navigation.launch map_file:='$(find bme_ros_navigat
 
 Most is segíthetünk az AMCL-nek a kezdeti lokalizációval:
 ![alt text][image45]
-Ezután már kijelölhetjük az uticélt:
+Ezután már kijelölhetjük az úticélt:
 ![alt text][image46]
 ![alt text][image47]
 ![alt text][image48]
 
 # Waypoint navigáció
 
-Waypoint navigáció esetén nem kézzel fogjuk megadni a következő célpontot, miután a robot elérte az előzőt, hanem előre definiálujuk a waypointokat, majd a robot autonóm módon végigjárja ezeket a pontokat.
+Waypoint navigáció esetén nem kézzel fogjuk megadni a következő célpontot, miután a robot elérte az előzőt, hanem előre definiáljuk a waypointokat, majd a robot autonóm módon végig járja ezeket a pontokat.
 
 A waypoint navigációhoz [ezt a csomagot](https://github.com/MOGI-ROS/follow_waypoints) fogjuk használni.
 Töltsük le a catkin workspace-be és fordítsuk újra:
@@ -886,7 +886,7 @@ Adjuk hozzá a csomagot a `navigation.launch` fájlunkhoz:
   </node>
 ```
 
-Ahhoz, hogy waypointokat adjunk meg az RViz-en keresztül a pose estimate eszközt fogjuk használni (amit korábban arra használtunk, hogy az AMCL kezdeti pozicióját adjuk meg vele). Ezúttal ez az eszköz waypointokat fog szolgáltatni nekünk, amiket a `waypoint` topikba szeretnénk küldeni. Ehhez remap-eljük az RViz topic-ját a `spawn_robot.launch` fájlban.
+Ahhoz, hogy waypointokat adjunk meg az RViz-en keresztül a pose estimate eszközt fogjuk használni (amit korábban arra használtunk, hogy az AMCL kezdeti pozícióját adjuk meg vele). Ezúttal ez az eszköz waypointokat fog szolgáltatni nekünk, amiket a `waypoint` topikba szeretnénk küldeni. Ehhez remap-eljük az RViz topic-ját a `spawn_robot.launch` fájlban.
 
 ```xml
 <remap from="initialpose" to="waypoint" />
