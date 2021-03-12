@@ -19,6 +19,11 @@
 [image17]: ./assets/hector_corridor_empty_2.png "Hector SLAM"
 [image18]: ./assets/hector_corridor_empty_3.png "Hector SLAM"
 [image19]: ./assets/hector_corridor_features_1.png "Hector SLAM"
+[image20]: ./assets/gmapping_room_1.png "Gmapping"
+[image21]: ./assets/gmapping_room_2.png "Gmapping"
+[image22]: ./assets/gmapping_corridor_empty_1.png "Gmapping"
+[image23]: ./assets/gmapping_corridor_empty_2.png "Gmapping"
+[image24]: ./assets/gmapping_corridor_features_1.png "Gmapping"
 
 # 7. - 8. hét - ROS navigáció
 
@@ -262,12 +267,17 @@ Az elmúlt években egyre inkább terjednek a mono, stereo vagy RGBD kamerát ha
 
 ## Hector SLAM
 
-A Hector SLAM a Darmstadt-i egyetem fejlesztése, nagyon egyszerű használni, akár szabd kézben tartott Lidarral is, ugyanis pusztán csak a Lidar méréseit használja a SLAM probléma megoldása során.
+A [Hector SLAM](http://wiki.ros.org/hector_mapping) a Darmstadt-i egyetem fejlesztése, nagyon egyszerű használni, akár szabd kézben tartott Lidarral is, ugyanis pusztán csak a Lidar méréseit használja a SLAM probléma megoldása során.
 Ez az előnye egyben a hátránya is, mivel nem használja a robot odometriáját, így speciális körülmények között nem használható, látunk is erre példát az üres folyosó esetén.
 
 Előtte azonban próbáljuk ki a Hector SLAM-et a már megszokott Gazebo világunkon.
 
-Hozzuk létre a hector_slam.launch fájlt:
+Természetesen a Hector SLAM nem része az alap ROS telepítésnek, így ezt fel kell tennünk a Linuxunk csomagkezelőjével:
+```console
+sudo apt install ros-$(rosversion -d)-hector-slam 
+```
+
+Hozzuk létre a `hector_slam.launch` fájlt:
 ```xml
 <?xml version="1.0"?>
 <launch>
@@ -306,6 +316,11 @@ Hozzuk létre a hector_slam.launch fájlt:
 
 </launch>
 ```
+
+>A ground truth térképünket a `map_server` node fogja adni, ezt szintén fel kell telepítsük a használatához:
+>```console
+>sudo apt install ros-$(rosversion -d)-map-server 
+>```
 
 Majd indítsuk el a világ és a robot szimulációját:
 
@@ -380,10 +395,18 @@ roslaunch bme_ros_navigation teleop.launch
 
 ![alt text][image19]
 
+A folyosón jól vizsgázott a Hector SLAM abban az esetben, ha voltak azonosítható jellegzeteségek a térképezés során.
+
 ## GMapping
 
-A másik SLAM algoritmus, amit kipróbálunk a GMapping. A GMapping nem csak a Lidar jeleit használja, hanem a robot odometriáját is!
+A másik SLAM algoritmus, amit kipróbálunk a [GMapping](http://wiki.ros.org/gmapping). A GMapping nem csak a Lidar jeleit használja, hanem a robot odometriáját is, és nagyon sok paraméterrel rendelkezik.
 
+Ez sem része az alap ROS csomagnak, telepítenünk kell:
+```console
+sudo apt install ros-$(rosversion -d)-gmapping 
+```
+
+Hozzuk létre a `gmapping.launch` fájlt:
 ```xml
 <?xml version="1.0"?>
 <launch>
@@ -451,19 +474,31 @@ A másik SLAM algoritmus, amit kipróbálunk a GMapping. A GMapping nem csak a L
 </launch>
 ```
 
+Majd indítsuk el a szimulációt az alap világon.
 ```console
 roslaunch bme_ros_navigation spawn_robot.launch
 ```
 
+Indítsuk el a gmapping-et, és a távirányítót is:
 ```console
 roslaunch bme_ros_navigation gmapping.launch
 ```
 
+```console
+roslaunch bme_ros_navigation teleop.launch
+```
+
+És nézzük meg az `rqt_graph`-ot:
 ![alt text][image11]
+
+![alt text][image21]
+
+Az előbbihez hasonlóan vezessük végig a robotunkat a szobán:
+![alt text][image20]
 
 ### Üres folyosó
 
-Próbáljuk ki a GMappinget üres folyosón:
+Próbáljuk ki a GMappinget az üres folyosón:
 ```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world' x:=-7 y:=2
 ```
@@ -472,20 +507,43 @@ roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigatio
 roslaunch bme_ros_navigation gmapping.launch map_file:='$(find bme_ros_navigation)/maps/corridor.yaml'
 ```
 
+```console
+roslaunch bme_ros_navigation teleop.launch
+```
+
+![alt text][image22]
+
+A GMapping az odometria használata miatt egész kis hibát szedett össze az üres folyosón, de ez sem volt képes teljesen pontosan felmérni a folyosó hosszát.
+![alt text][image23]
+
 ### Folyosó tárgyakkal
-Ésnézzük meg ezt is tárgyakkal:
+Nézzük meg a GMappinget is tárgyakkal:
 ```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
 ```
 
+```console
+roslaunch bme_ros_navigation gmapping.launch map_file:='$(find bme_ros_navigation)/maps/corridor.yaml'
+```
+
+```console
+roslaunch bme_ros_navigation teleop.launch
+```
+![alt text][image24]
+
+
 ## Map saver
 
-Ha szeretnénk elmenteni a SLAM algoritmus által létrehozott térképet, akkor a map_server csomag map_saver node-ját tudjuk erre a célra használni. A map_server-rel találkoztunk már korábban is, ez adta a ground truth térképünket.
+Ha szeretnénk elmenteni a SLAM algoritmus által létrehozott térképet, akkor a `map_server` csomag `map_saver` node-ját tudjuk erre a célra használni. A `map_server`-rel találkoztunk már korábban is, ez adta a ground truth térképünket.
 
-A map_saver abba a mappába menti a térképet, ahonnan indítjuk!
-Csináljunk erre egy saved_maps mappát a maps-en belül.
+A `map_saver` abba a mappába menti a térképet, ahonnan indítjuk!
+Használjuk most erre a `saved_maps` mappát a maps-en belül, de a kezdőcsomag már alapból tartalmazza ezeket a térképeket!
 
+```console
 rosrun map_server map_saver -f map
+```
+
+Példa:
 
 ```console
 david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation/maps/saved_maps$ rosrun map_server map_saver -f map
@@ -499,8 +557,9 @@ david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation/
 map.pgm  map.yaml
 ```
 
-
 # Lokalizáció
+
+
 ## AMCL
 
 ```xml
