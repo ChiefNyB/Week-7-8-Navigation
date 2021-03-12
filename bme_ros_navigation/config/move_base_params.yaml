@@ -39,8 +39,7 @@ move_slow_and_clear:
   limited_trans_speed: 0.25
   limited_rot_speed: 0.45
   limited_distance: 0.3
-  #planner_namespace: 'TrajectoryPlannerROS'
 
 rotate_recovery:
   max_vel_theta: 0.3
-  acc_lim_theta: 1.0
+  acc_lim_theta: 3.0
