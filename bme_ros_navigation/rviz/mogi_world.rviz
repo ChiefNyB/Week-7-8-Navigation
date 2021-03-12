@@ -204,7 +204,7 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/Map
       Color Scheme: costmap
-      Draw Behind: false
+      Draw Behind: true
       Enabled: true
       Name: Map
       Topic: /map_groundtruth
@@ -352,13 +352,13 @@ Visualization Manager:
           Use rainbow: true
           Value: true
         - Class: rviz/Marker
-          Enabled: true
+          Enabled: false
           Marker Topic: /visualization_marker
           Name: Marker
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
       Enabled: true
       Name: Navigation
   Enabled: true
@@ -389,7 +389,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 23.49908447265625
+      Distance: 20.623258590698242
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
