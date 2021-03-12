@@ -8,6 +8,17 @@
 [image6]: ./assets/tf_tree.png "TF"
 [image7]: ./assets/graph_1.png "Graph"
 [image8]: ./assets/roswtf.png "roswtf"
+[image9]: ./assets/map_1.png "map"
+[image10]: ./assets/map_2.png "map"
+[image11]: ./assets/graph_2.png "Graph"
+[image12]: ./assets/graph_3.png "Graph"
+[image13]: ./assets/graph_4.png "Graph"
+[image14]: ./assets/hector_slam_1.png "Hector SLAM"
+[image15]: ./assets/hector_slam_2.png "Hector SLAM"
+[image16]: ./assets/hector_corridor_empty_1.png "Hector SLAM"
+[image17]: ./assets/hector_corridor_empty_2.png "Hector SLAM"
+[image18]: ./assets/hector_corridor_empty_3.png "Hector SLAM"
+[image19]: ./assets/hector_corridor_features_1.png "Hector SLAM"
 
 # 7. - 8. hét - ROS navigáció
 
@@ -48,15 +59,33 @@ A kezdőprojekt tartalma a következő:
 david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation$ tree
 .
 ├── CMakeLists.txt
+├── config
+│   ├── costmap_common_params.yaml
+│   ├── dwa_local_planner_params.yaml
+│   ├── global_costmap_params.yaml
+│   ├── global_planner_params.yaml
+│   ├── local_costmap_params.yaml
+│   └── move_base_params.yaml
 ├── launch
 │   ├── check_urdf.launch
 │   ├── spawn_robot.launch
 │   ├── teleop.launch
 │   └── world.launch
+├── maps
+│   ├── corridor_hector.yaml
+│   ├── corridor.pgm
+│   ├── corridor.yaml
+│   ├── map_hector.yaml
+│   ├── map.pgm
+│   ├── map.yaml
+│   └── saved_maps
+│       ├── corridor.pgm
+│       ├── corridor.yaml
+│       ├── map.pgm
+│       └── map.yaml
 ├── meshes
 │   ├── lidar.dae
 │   ├── mogi_bot.dae
-│   ├── vlp16.dae
 │   └── wheel.dae
 ├── package.xml
 ├── rviz
@@ -67,13 +96,20 @@ david@DavidsLenovoX1:~/bme_catkin_ws/src/Week-7-8-Navigation/bme_ros_navigation$
 │   ├── mogi_bot.gazebo
 │   └── mogi_bot.xacro
 └── worlds
+    ├── 20m_corridor
+    │   ├── model.config
+    │   └── model.sdf
+    ├── 20m_corridor_empty.world
+    ├── 20m_corridor_features.world
+    ├── map_creation
+    │   ├── 20m_corridor_map_creation.world
+    │   └── world_map_creation.world
     └── world_modified.world
 ```
 
 # Gazebo világok
 
-
-A fejezet során a már jól megismert `world_modified.world` Gazebo világot fogjuk használni, amit a következő paranccsal tudunk tesztelni:
+A fejezet során a már jól megismert `world_modified.world` Gazebo világot fogjuk használni, amit a következő paranccsal bármikor ki tudunk próbálni:
 ```console
 roslaunch bme_ros_navigation world.launch
 ```
@@ -121,7 +157,7 @@ roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigatio
 # Ground truth térkép készítése
 
 Lehetőségünk van a Gezbo világunkból egy úgy nevezett ground truth térképet készíteni. Ehhez a `pgm_map_creator` csomagot használhatjuk.
-Ez nem egy hivatalos ROS csomag, így letölthető a tárgy GitHub oldaláról a catkin_workspace-be:
+Ez nem egy hivatalos ROS csomag, így letölthető a tárgy GitHub oldaláról a catkin workspace-etekbe:
 ```console
 git clone https://github.com/MOGI-ROS/pgm_map_creator
 ```
@@ -165,7 +201,9 @@ A `request_publisher` launch fájlban tudjuk megadni a térképünk méretét é
 </launch>
 ```
 
-Előre elkészítettem a grund truth térképet a `world_modified.world` és a `20m_corridor_empty.world` alapján, így ezeket használhatjuk a kezdőcsomagból.
+Előre elkészítettem a grund truth térképet a `world_modified.world` és a `20m_corridor_empty.world` alapján, így ezeket használhatjuk a kezdőcsomagból.  
+![alt text][image9]
+![alt text][image10]
 
 A `pgm_map_creator` alapértelmezetten a saját csomagjának a maps mappájába menti a térkép fájlokat. A `.pgm` fájlok egyszerű bitmap-ek, többek között megnyithatók a GIMP vagy Inkscape szoftverekkel.
 
@@ -192,16 +230,17 @@ Vessünk még egy pillantást a `spawn_robot.launch` fájlra! Ebben ugyanis van 
 <publishOdomTF>false</publishOdomTF>
 ```
 
-Mostantól nem a Gazebo plugin csinálja a transzformációt az odom fix frame és a robot alváza között, hanem a szenzorfúzió. Ez sokkal jobban hasonlít egy valódi robotra, ahol a szenzor adatok (IMU és Odoemtria) megadott topicokba kerülnek, majd ezek alapján a szenzorfúzió hozza létre a transzformációt.
+Mostantól nem a Gazebo plugin csinálja a transzformációt az odom fix frame és a robot alváza között, hanem az EKF szenzorfúzió. Ez a felállás sokkal jobban hasonlít egy valódi robotra, ahol a szenzor adatok (IMU és Odoemtria) megadott topicokba kerülnek, majd ezek alapján a szenzorfúzió hozza létre a transzformációt.
 Nézzük is meg a TF tree-t, ami a `rosrun rqt_tf_tree rqt_tf_tree` paranccsal tudok elindítani.
 ![alt text][image6]
 
 Valamint a node-jaink összekötését is vizsgáljuk meg az `rqt_graph` paranccsal:
 ![alt text][image7]
 
+## Hibakeresés
 Hibakeresés miatt, kapcsoljuk most vissza a `publishOdomTF`-et a Gazebo pluginban, és nézzük meg mi történik!
 
-A robotunk furcsán ugrál az RVizben megjelenítva, de szerencsére ennél nagyobb baj nem történt:
+A robotunk furcsán ugrál az RVizben megjelenítve, de szerencsére ennél nagyobb baj nem történt:
 ![alt text][image8]
 
 Azokban az esetekben, amikor sejtjük, hogy valami nincs rendben a TF-fel, sokat segít a `roswtf` parancssoros tool, ami ebben az esetben is azonnal észrevette a hibát:
@@ -284,20 +323,49 @@ Valamint a távirányítót:
 roslaunch bme_ros_navigation teleop.launch
 ```
 
+Az RViz konfigurációt úgy állítottam be, hogy a ground truth térképet lila színnel vetítse a háttérbe.
+![alt text][image14]
+
+Vezessük körbe a robotunkat:
+![alt text][image15]
+
+Vessünk egy pillantást az rqt_graph-ra:
+
+![alt text][image12]
+
 ### Üres folyosó
 
-Próbáljuk ki a Hector SLAM-et az üres folyosón:
+Próbáljuk ki a Hector SLAM-et az üres folyosón, indítsuk el a szimulációt a folyosóval:
 ```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_empty.world' x:=-7 y:=2 
 ```
 
+Indítsuk el a Hector SLAM-et a megfelelő ground truth térképpel:
 ```console
 roslaunch bme_ros_navigation hector_slam.launch map_file:='$(find bme_ros_navigation)/maps/corridor_hector.yaml'
 ```
 
+És természetesen indítsunk egy távirányítót is:
+```console
+roslaunch bme_ros_navigation teleop.launch
+```
+![alt text][image18]
+
+Vezessük végig a robotot a folyosón:
+
+![alt text][image17]
+
+És nézzük meg a térképet:
+
+![alt text][image16]
+
+Láthatjuk, hogy a pusztán a lidar jeleire támaszkodó algoritmus jelentős hibát (kb 10m) szedett össze, a folyosón az 5m érzéeklési távolsággal rendelkező lidar használata során. Mekkora lenne a hiba egy 30m hosszú folyosón?
+
 ### Folyosó tárgyakkal
 
-És most nézzük meg tárgyakkal:
+Nézzük meg, hogy segít-e a Hector SLAM-nek ha vannak tárgyak a folyosón!
+
+Indítsuk el a szimulációt és a többi node-ot, ahogy az előbb:
 ```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
 ```
@@ -305,6 +373,12 @@ roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigatio
 ```console
 roslaunch bme_ros_navigation hector_slam.launch map_file:='$(find bme_ros_navigation)/maps/corridor_hector.yaml'
 ```
+
+```console
+roslaunch bme_ros_navigation teleop.launch
+```
+
+![alt text][image19]
 
 ## GMapping
 
@@ -384,6 +458,8 @@ roslaunch bme_ros_navigation spawn_robot.launch
 ```console
 roslaunch bme_ros_navigation gmapping.launch
 ```
+
+![alt text][image11]
 
 ### Üres folyosó
 
@@ -478,6 +554,8 @@ map.pgm  map.yaml
 </launch>
 ```
 
+![alt text][image13]
+
 roslaunch bme_ros_navigation spawn_robot.launch
 
 roslaunch bme_ros_navigation amcl.launch map_file:='$(find bme_ros_navigation)/maps/map.yaml'
@@ -528,6 +606,37 @@ roslaunch bme_ros_navigation navigation.launch map_file:='$(find bme_ros_navigat
 ## Recovery akciók
 ToDo
 
+```yaml
+recovery_behavior_enabled: true
+recovery_behaviors:
+  - name: 'conservative_reset'
+    type: 'clear_costmap_recovery/ClearCostmapRecovery'
+  - name: 'aggressive_reset'
+    type: 'clear_costmap_recovery/ClearCostmapRecovery'
+  - name: 'move_slow_and_clear'
+    type: 'move_slow_and_clear/MoveSlowAndClear'
+  - name: 'rotate_recovery'
+    type: 'rotate_recovery/RotateRecovery'
+
+conservative_reset:
+  reset_distance: 3.0
+  layer_names: ["obstacle_layer"]
+
+aggressive_reset:
+  reset_distance: 0.0
+  layer_names: ["obstacle_layer"]
+
+move_slow_and_clear:
+  clearing_distance: 0.5
+  limited_trans_speed: 0.25
+  limited_rot_speed: 0.45
+  limited_distance: 0.3
+
+rotate_recovery:
+  max_vel_theta: 0.3
+  acc_lim_theta: 3.0
+```
+
 # Waypoint navigáció
 
 
@@ -557,7 +666,193 @@ rosrun rqt_reconfigure rqt_reconfigure
 
 ## Waypoint navigáció C++ ROS node-ból
 
+
+```cpp
+#include "actionlib/client/simple_action_client.h"
+#include "move_base_msgs/MoveBaseAction.h"
+#include "ros/ros.h"
+#include "tf/tf.h"
+
+// Define a client for to send goal requests to the move_base server through a
+// SimpleActionClient
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>
+    MoveBaseClient;
+
+int main(int argc, char **argv) {
+  // Initialize the nav_goals node
+  ros::init(argc, argv, "nav_goals");
+
+  // tell the action client that we want to spin a thread by default
+  MoveBaseClient ac("move_base", true);
+
+  // Wait 5 sec for move_base action server to come up
+  while (!ac.waitForServer(ros::Duration(5.0))) {
+    ROS_INFO("Waiting for the move_base action server to come up");
+  }
+
+  move_base_msgs::MoveBaseGoal goal;
+
+  // set up the frame parameters
+  goal.target_pose.header.frame_id = "map";
+  goal.target_pose.header.stamp = ros::Time::now();
+
+  // Define a list of positions and orientations for the robot to reach
+  float waypoints[4][3] = {{-4.25, 0.4, 3.14},
+                           {-1.75, -2.8, 0.0},
+                           {2.5, -5.5, 1.57},
+                           {1.25, 4.0, -1.57}};
+
+  int num_points = 4;
+
+  for (int i = 0; i < num_points; i++) {
+
+    goal.target_pose.pose.position.x = waypoints[i][0];
+    goal.target_pose.pose.position.y = waypoints[i][1];
+    goal.target_pose.pose.orientation =
+        tf::createQuaternionMsgFromYaw(waypoints[i][2]);
+
+    // Send the goal position and orientation for the robot to reach
+    ROS_INFO("Sending goal");
+    ac.sendGoal(goal);
+
+    // Wait an infinite time for the results
+    ac.waitForResult();
+
+    // Check if the robot reached its goal
+    if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+      ROS_INFO("Goal reached!");
+    else
+      ROS_INFO("Failed to reach goal for some reason");
+    // Wait 1 second before moving to the next goal
+    ros::Duration(1.0).sleep();
+  }
+
+  return 0;
+}
+```
+
+```cmake
+add_executable(nav_goals src/nav_goals.cpp)
+target_link_libraries(nav_goals ${catkin_LIBRARIES})
+```
+
 ### RViz visual markers
+
+```cpp
+#include "nav_msgs/Odometry.h"
+#include "ros/ros.h"
+#include "tf/tf.h"
+#include "visualization_msgs/Marker.h"
+#include <math.h>
+
+float odom_x = 0.0, odom_y = 0.0;
+
+// get the robot's pose to global variables
+void get_pose_cb(const nav_msgs::Odometry::ConstPtr &msg) {
+  ::odom_x = msg->pose.pose.position.x;
+  ::odom_y = msg->pose.pose.position.y;
+  // ROS_INFO("Robot's actual pose: %1.2f, %1.2f", ::odom_x, ::odom_y);
+}
+
+int main(int argc, char **argv) {
+  ros::init(argc, argv, "add_markers");
+  ros::NodeHandle n;
+  ros::Rate rate(20);
+  ros::Subscriber odom_sub = n.subscribe("/odom", 1, get_pose_cb);
+  ros::Publisher marker_pub =
+      n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+
+  // Set our initial shape type to be a cube
+  uint32_t shape = visualization_msgs::Marker::CUBE;
+
+  // Define the list of positions and orientations for marker
+  float waypoints[4][3] = {{-4.25, 0.4, 3.14},
+                           {-1.75, -2.8, 0.0},
+                           {2.5, -5.5, 1.57},
+                           {1.25, 4.0, -1.57}};
+
+  visualization_msgs::Marker marker;
+  // Set the frame ID and timestamp.  See the TF tutorials for information on
+  // these.
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time::now();
+
+  // Set the namespace and id for this marker.  This serves to create a unique
+  // ID Any marker sent with the same namespace and id will overwrite the old
+  // one
+  marker.ns = "add_markers";
+  marker.id = 0;
+
+  // Set the marker type.  Initially this is CUBE, and cycles between that and
+  // SPHERE, ARROW, and CYLINDER
+  marker.type = shape;
+
+  // Set the marker action.  Options are ADD, DELETE, and new in ROS Indigo: 3
+  // (DELETEALL)
+  marker.action = visualization_msgs::Marker::ADD;
+
+  // Set the pose of the marker.  This is a full 6DOF pose relative to the
+  // frame/time specified in the header
+  marker.pose.position.x = waypoints[0][0];
+  marker.pose.position.y = waypoints[0][1];
+  marker.pose.position.z = 0.5;
+  marker.pose.orientation = tf::createQuaternionMsgFromYaw(waypoints[0][2]);
+
+  // Set the scale of the marker -- 1x1x1 here means 1m on a side
+  marker.scale.x = 0.3;
+  marker.scale.y = 0.3;
+  marker.scale.z = 0.3;
+
+  // Set the color -- be sure to set alpha to something non-zero!
+  marker.color.r = 0.0f;
+  marker.color.g = 0.0f;
+  marker.color.b = 1.0f;
+  marker.color.a = 1.0;
+
+  marker.lifetime = ros::Duration();
+
+  float x_distance, y_distance;
+  float pickup_range = 0.4;
+  int i = 0;
+
+  while (ros::ok()) {
+    // Publish the marker
+    marker_pub.publish(marker);
+    x_distance = fabs(waypoints[i][0] - odom_x);
+    y_distance = fabs(waypoints[i][1] - odom_y);
+
+    // ROS_INFO("Distance to pick-up target: %1.2f", sqrt(pow(x_distance, 2) +
+    // pow(y_distance, 2)));
+    if (sqrt(pow(x_distance, 2) + pow(y_distance, 2)) < pickup_range) {
+      marker.action = visualization_msgs::Marker::DELETE;
+      marker_pub.publish(marker);
+      ROS_INFO("Marker reached!");
+
+      i++;
+
+      // Set the marker action.  Options are ADD, DELETE, and new in ROS Indigo:
+      // 3 (DELETEALL)
+      marker.action = visualization_msgs::Marker::ADD;
+
+      // Set the pose of the marker.  This is a full 6DOF pose relative to the
+      // frame/time specified in the header
+      marker.pose.position.x = waypoints[i][0];
+      marker.pose.position.y = waypoints[i][1];
+      marker.pose.position.z = 0.5;
+      marker.pose.orientation = tf::createQuaternionMsgFromYaw(waypoints[i][2]);
+    }
+
+    ros::spinOnce();
+    rate.sleep();
+  }
+  return 0;
+}
+```
+
+```cmake
+add_executable(add_markers src/add_markers.cpp)
+target_link_libraries(add_markers ${catkin_LIBRARIES})
+```
 
 ---
 
@@ -566,3 +861,5 @@ rosrun rqt_reconfigure rqt_reconfigure
 # Velocity smoother
 
 # Exploration
+
+# Turtlebot 3
