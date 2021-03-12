@@ -24,6 +24,15 @@
 [image22]: ./assets/gmapping_corridor_empty_1.png "Gmapping"
 [image23]: ./assets/gmapping_corridor_empty_2.png "Gmapping"
 [image24]: ./assets/gmapping_corridor_features_1.png "Gmapping"
+[image25]: ./assets/amcl_frames.png "AMCL"
+[image26]: ./assets/amcl_1.png "AMCL"
+[image27]: ./assets/amcl_2.png "AMCL"
+[image28]: ./assets/amcl_3.png "AMCL"
+[image29]: ./assets/amcl_corridor_1.png "AMCL"
+[image30]: ./assets/amcl_corridor_2.png "AMCL"
+[image31]: ./assets/amcl_corridor_3.png "AMCL"
+[image32]: ./assets/amcl_corridor_4.png "AMCL"
+[image33]: ./assets/amcl_corridor_5.png "AMCL"
 
 # 7. - 8. hét - ROS navigáció
 
@@ -559,8 +568,16 @@ map.pgm  map.yaml
 
 # Lokalizáció
 
+Lokalizáció esetén a robotunk pontos pozicióját és orientációját határottuk meg egy ismert térképen. Ehhez a ROS [AMCL (Advanced Monte Carlo Localization) csomagját](http://wiki.ros.org/amcl) fogjuk használni. Ez a lokalizációs módszer egy úgynevezett particle filter algoritmus, ami induláskor véletlenszerűen "szór szét" particle-öket a téképen, és a lidar szenzoradataiból próbálja kiszűrni azokat a lehetséges particle-öket, amikkel konzisztensek a szenzoradataink. Ahogy mozgunk a robottal a lehetséges particle-ök a robot valós helyéhez konvergálnak.
 
 ## AMCL
+
+Az AMCL sem része az alap ROS telepítésnek, így tegyük fel ezt a csomagot:
+```console
+sudo apt install ros-$(rosversion -d)-amcl
+```
+
+Majd hozzuk létre az `amcl.launch` fájlt. Ebben az esetben nem lesz szükségünk a ground truth térképre, és vegyük észre, hogy alapértelmezetten a korábbi térképezés által rögzített térképet töltjük be a `map_server`-nek.
 
 ```xml
 <?xml version="1.0"?>
@@ -613,17 +630,75 @@ map.pgm  map.yaml
 </launch>
 ```
 
-![alt text][image13]
+Indítsuk el a szimulációt:
 
+```console
 roslaunch bme_ros_navigation spawn_robot.launch
+```
 
+Indítsuk el az AMCL-t is, azonban ne az alapértelmezett mentett térképpel, hanem először a ground truth térképpel:
+```console
 roslaunch bme_ros_navigation amcl.launch map_file:='$(find bme_ros_navigation)/maps/map.yaml'
+```
 
+Indítsunk egy távirányítót is, viszont mielőtt nekiállnánk vezetni, nézzünk rá az rqt_graph-ra és a TF tree-re!
+
+```console
+roslaunch bme_ros_navigation teleop.launch
+```
+
+![alt text][image13]
+![alt text][image25]
+
+Próbáljuk ki a lokalizációt, mozogjunk a robotunkkal:
+
+
+Azt tapasztaljuk, hogy az ennyire tökéletes térkép nehézséget okoz az AMCL-nek, érdemes olyan térképpel használnunk a lokalizációt, ami azzal a szenzorral készült, amit a lokalizációs is használ!
+
+Most indítsuk e a mentett térképpel, és nézzük meg mi történik:
+```console
 roslaunch bme_ros_navigation amcl.launch
+```
 
+![alt text][image26]
+![alt text][image27]
+![alt text][image28]
+
+Próbáljuk ki a lokalizációt a folyosón is:
+```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
+```
 
+```console
 roslaunch bme_ros_navigation amcl.launch map_file:='$(find bme_ros_navigation)/maps/saved_maps/corridor.yaml'
+```
+Induláskor az AMCL-nek fogalma sincs, hogy hol a robot, ahogy ezt korábban is láttuk:
+![alt text][image29]
+
+Mivel ezen a térképen nagyon kevés jól felismerhető feature van, elképzelhető, hogy az AMCL tévesen lokalizálja a robotot:
+![alt text][image30]
+
+Ha vezetjük tovább a robotot, a particle-ök elkezdenek divergálni a robot pozíciójától:
+![alt text][image31]
+
+Ez addig fokozódik, amíg új particle-ök jelennek meg:
+![alt text][image32]
+
+És egy idő után képes sikeresen lokalizálni a robotunkat:
+![alt text][image33]
+
+Téves konvergálást úgy tudunk a legjobban elkerülni, ha van valamennyi elképzelésünk a robotunk kezdeti poziciójáról és orientációjáról. Ezeket a launch fájlban megadhatjuk, és csökkenthetjük a kezdeti részecskék eloszlását, erről [bővebben az AMCL wiki oldalán olvashattok](http://wiki.ros.org/amcl#Parameters):
+
+```xml
+    <!-- If you choose to define initial pose here -->
+    <param name="initial_pose_x" value="$(arg initial_pose_x)"/>
+    <param name="initial_pose_y" value="$(arg initial_pose_y)"/>
+    <param name="initial_pose_a" value="$(arg initial_pose_a)"/>
+    <!-- Parameters for inital particle distribution -->
+    <param name="initial_cov_xx" value="9.0"/>
+    <param name="initial_cov_yy" value="9.0"/>
+    <param name="initial_cov_aa" value="9.8"/>
+```
 
 # Navigáció
 
