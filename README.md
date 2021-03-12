@@ -33,6 +33,21 @@
 [image31]: ./assets/amcl_corridor_3.png "AMCL"
 [image32]: ./assets/amcl_corridor_4.png "AMCL"
 [image33]: ./assets/amcl_corridor_5.png "AMCL"
+[image34]: ./assets/interactive_marker.png "Interactive marker"
+[image35]: ./assets/overview_tf.png "move_base"
+[image36]: ./assets/amcl_init_1.png "AMCL"
+[image37]: ./assets/amcl_init_2.png "AMCL"
+[image38]: ./assets/navigation_1.png "navigation"
+[image39]: ./assets/navigation_2.png "navigation"
+[image40]: ./assets/navigation_3.png "navigation"
+[image41]: ./assets/navigation_4.png "navigation"
+[image42]: ./assets/navigation_5.png "navigation"
+[image43]: ./assets/navigation_6.png "navigation"
+[image44]: ./assets/navigation_7.png "navigation"
+[image45]: ./assets/navigation_corridor_1.png "navigation"
+[image46]: ./assets/navigation_corridor_2.png "navigation"
+[image47]: ./assets/navigation_corridor_3.png "navigation"
+[image48]: ./assets/navigation_corridor_4.png "navigation"
 
 # 7. - 8. hét - ROS navigáció
 
@@ -167,6 +182,12 @@ Ennek megfelelően a másik folyosómodellre is elhelyezhető a robot:
 ```console
 roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
 ```
+
+Próbáljuk ki a távirányítót is, mert kiegészítjük egy új hasznos funkcióval ebben a fejezetben, és ez az `Interactive marker twist server` csomag hasznáalata, amit így tudtok telepíteni:
+```console
+sudo apt install ros-$(rosversion -d)-interactive-marker-twist-server
+```
+![alt text][image34]
 
 # Ground truth térkép készítése
 
@@ -652,7 +673,6 @@ roslaunch bme_ros_navigation teleop.launch
 
 Próbáljuk ki a lokalizációt, mozogjunk a robotunkkal:
 
-
 Azt tapasztaljuk, hogy az ennyire tökéletes térkép nehézséget okoz az AMCL-nek, érdemes olyan térképpel használnunk a lokalizációt, ami azzal a szenzorral készült, amit a lokalizációs is használ!
 
 Most indítsuk e a mentett térképpel, és nézzük meg mi történik:
@@ -700,7 +720,30 @@ Téves konvergálást úgy tudunk a legjobban elkerülni, ha van valamennyi elk�
     <param name="initial_cov_aa" value="9.8"/>
 ```
 
+Az AMCL-nek adhatunk egy kezdeti pozíciót is az RViz segítségével:
+![alt text][image36]
+Fontos megjegyezni, hogy ezt csak a `map` frame-ben tehetjük meg, az `odom`-ban nem!
+![alt text][image37]
 # Navigáció
+
+A [ROS nyílt forrású navigációs stackje](http://wiki.ros.org/navigation) hatalmas, úgyhogy az implementációjának részleteibe nem megyünk bele, a legfontosabb tulajdonságait nézzük meg.
+
+A navigációs stack működik tetszőleges SLAM vagy lokalizációs csomaggal, ebben az esetben mi egy előre rögzített térképen az AMCL-t használjuk majd lokalizációra.
+
+A navigációs stacket úgy tervezték, hogy könnyen használható legyen különböző lokális és globális útvonaltervezővel. A globális tervezéshez a [NavfnROS](http://wiki.ros.org/navfn) csomagot, a lokális tervezéshez pedig a [DWAPlannerROS](http://wiki.ros.org/dwa_local_planner) csomagot fogjuk használni.
+
+A ROS navigációs stackjének működése kapcsán érdemes végignézni a [hivatalos tutorialok](http://wiki.ros.org/navigation/Tutorials)at, valamint a [ROS Navigation Tuning Guide](http://kaiyuzheng.me/documents/navguide.pdf)-ot Kaiyu Zheng-től.
+
+A navigációs stack-et a [`move_base`](http://wiki.ros.org/move_base) node indítja el, és ez a belső felépítése:
+![alt text][image35]
+
+A fő részei tehát:
+1) Globális costmap, gyakorlatilag ez a térkép, a robot környezetében lévő statikus akadályok szerepelnek rajta, amiket megnövelünk, hogy elkerüljük a potenciális ütközést velük. A robot a navigáció során nem használja közvetlenül a robot szenzorait ennek a firssítéséhez.
+2) A globális útvonaltervező az előbbi global costmap-et használja fel a tervezéshez, odafigyelve arra, hogy a robot fizikai méretének megfelelően tervezze meg az útvonalat.
+3) Lokális costmap, ezen szerepelnek a robot környezetében lévő dinamikus akadályok, például állatok és emberek, de a térképhez képest történt változások is a lokális costmapen jelennek meg. A lokális costmap mindig az aktuális szenzoradatok alapján frissül.
+4) A lokális útvonaltervező célja a globális ütvonal követése a dinamikus akadályok elkerülése mellett. Tehát a robot képes kikerülni az akadályt majd visszatérni a globális útvonaltervhez.
+
+Készítsük el a `navigation.launch` fájlt, és nézzük meg a tartalmát:
 
 ```xml
 <?xml version="1.0"?>
@@ -728,17 +771,10 @@ Téves konvergálást úgy tudunk a legjobban elkerülni, ha van valamennyi elk�
 </launch>
 ```
 
-roslaunch bme_ros_navigation spawn_robot.launch
-roslaunch bme_ros_navigation navigation.launch
-
-Costmap-ek törlése kézzel:
-rosservice call /move_base/clear_costmaps "{}"
-
-roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
-roslaunch bme_ros_navigation navigation.launch map_file:='$(find bme_ros_navigation)/maps/saved_maps/corridor.yaml'
+A navigációs stack annyira sok paramétert használ, hogy nem érdemes ezeket a launch fájlban tartani, helyette kiszervezzük `.yaml` fájlokba a config mappán belülre.
 
 ## Recovery akciók
-ToDo
+A `move_base_params.yaml` fájlban találjuk a robot recovery akcióit, amit abban az esetben hajt végre, ha valamilyen oknál fogva elakadna a terve végrehajtásában.
 
 ```yaml
 recovery_behavior_enabled: true
@@ -770,6 +806,56 @@ rotate_recovery:
   max_vel_theta: 0.3
   acc_lim_theta: 3.0
 ```
+
+A recovery első lépése a robot körüli costmap-ek törlése. Ezt a törlést kézzel is végre tudjuk hajtani a megfelelő service hívással:
+```console
+rosservice call /move_base/clear_costmaps "{}"
+```
+
+Ha ezek után sem tudná folytatni a robot a tervezett útvonalát, akkor valószínűleg nagyon közel van valami akadályhoz, és ki kéne jutnunk erről a területről, ezért hajtja végre a `move_slow_and_clear` akciót, ami nem teljesen biztonságos, vezethet ütközéshez, de a legtöbb esetben ez a praktikus megoldás. Ennek a használatához telepíteni kell a megfelelő csomagot:
+```console
+sudo apt install ros-$(rosversion -d)-move-slow-and-clear
+```
+
+Ha ez sem vált volna be, akkor végső próbálkozásként megpróbálunk forogni a robottal. Ez egyébként a navigációs stack alapértelmezett recovery mechanizmusa, ami azonban a gyakolratban egy valós roboton nagyon nem praktikus.
+
+Próbáljuk ki a navigációt, ezúttal nem is lesz szükségünk a távirányítóra:
+```console
+roslaunch bme_ros_navigation spawn_robot.launch
+```
+```console
+roslaunch bme_ros_navigation navigation.launch
+```
+
+Induláskor, ahogy korábban már láttuk, az AMCL még nem lokalizálta a robot. A falak mentén a világos szürke sávok a globális costmap megjelenjtése.
+![alt text][image38]
+Ezen segíthetünk a távirányítóval, vagy adhatunk egy célpontot a navigációnak.
+![alt text][image39]
+Előfordulhat, hogy az AMCL kezdetben rosszul lokalizálja a robotot.
+![alt text][image40]
+De némi mozgás után sikeresen lokalizálja a robotot.
+![alt text][image41]
+Majd a robot eléri a célpontját.
+![alt text][image42]
+Bármikor adhatunk új célpontot. A robot körül lévő costmap-et a lokális DWA Planner hozza létre. Ez nem a local costmap!
+![alt text][image43]
+A local costmap-et láthatjuk például a falak mentén.
+![alt text][image44]
+
+Próbáljuk ki a navigációt a folyosón is!
+```console
+roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigation)/worlds/20m_corridor_features.world' x:=-7 y:=2
+```
+```console
+roslaunch bme_ros_navigation navigation.launch map_file:='$(find bme_ros_navigation)/maps/saved_maps/corridor.yaml'
+```
+
+Most is segíthetünk az AMCL-nek a kezdeti lokalizációval:
+![alt text][image45]
+Ezután már kijelölhetjük az uticélt:
+![alt text][image46]
+![alt text][image47]
+![alt text][image48]
 
 # Waypoint navigáció
 
