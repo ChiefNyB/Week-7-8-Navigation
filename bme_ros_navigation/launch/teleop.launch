@@ -4,4 +4,10 @@
 
   <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen"/>
 
+  <arg name="config" default="linear" />
+  <node pkg="interactive_marker_twist_server" type="marker_server" name="twist_marker_server">
+    <rosparam command="load" file="$(find interactive_marker_twist_server)/config/$(arg config).yaml" />
+    <remap from="twist_marker_server/cmd_vel" to="cmd_vel"/>
+  </node>
+
 </launch>
