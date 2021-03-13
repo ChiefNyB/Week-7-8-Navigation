@@ -59,8 +59,9 @@
 
 # Hova fogunk eljutni?
 
-<a href="https://youtu.be/8bnjzPTNLfc"><img height="400" src="./assets/youtube1.png"></a>  
-<a href="https://youtu.be/-YCcQZmKJtY"><img height="400" src="./assets/youtube2.png"></a>
+<a href="https://youtu.be/XveJMrCh9vw"><img height="400" src="./assets/youtube1.png"></a>  
+<a href="https://youtu.be/6M7XvkN7sc0"><img height="400" src="./assets/youtube2.png"></a>  
+<a href="https://youtu.be/hxvz2DUILys"><img height="400" src="./assets/youtube3.png"></a>
 
 # Tartalomjegyzék
 1. [Kezdőcsomag](#Kezdőcsomag)  
