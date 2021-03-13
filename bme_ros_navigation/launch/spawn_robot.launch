@@ -69,4 +69,21 @@
     <param name="self_diagnose" value="false"/>
   </node>
 
+  <!--node name="cob_base_velocity_smoother" pkg="cob_base_velocity_smoother"  type="cob_base_velocity_smoother" output="screen">
+    <remap from="output" to="cmd_vel"/>
+    <remap from="input" to="twist_mux/cmd_vel"/>
+    <param name="circular_buffer_capacity" value="6"/>
+    <param name="maximal_time_delay" value="1"/>
+    <param name="maximal_time_delay_to_stop" value="0.5"/>
+    <param name="thresh_max_acc" value="0.1"/>
+    <param name="loop_rate" value="30"/>
+    <param name="min_input_rate" value="1"/>
+  </node-->
+
+  <node pkg="twist_mux" type="twist_mux" name="twist_mux">
+    <rosparam command="load" file="$(find bme_ros_navigation)/config/twist_mux.yaml" />
+    <!--remap from="cmd_vel_out" to="twist_mux/cmd_vel"/-->
+    <remap from="cmd_vel_out" to="cmd_vel"/>
+  </node>
+
 </launch>

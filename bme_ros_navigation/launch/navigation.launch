@@ -18,6 +18,7 @@
     <rosparam file="$(find bme_ros_navigation)/config/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find bme_ros_navigation)/config/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find bme_ros_navigation)/config/dwa_local_planner_params.yaml" command="load" />
+    <remap from="cmd_vel" to="nav_vel"/>
   </node>
 
   <!-- Follow waypoints -->
