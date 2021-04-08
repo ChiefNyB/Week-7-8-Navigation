@@ -1130,7 +1130,22 @@ Ezután fordítsuk újra a catkin workspace-t, majd
 source devel/setup.bash
 ```
 
-És próbáljuk ki a node-unkat. Ehhez 3 launchfájlt fogunk összesen elindítani:
+Készítsünk egy `manual_waypoints.launch` fájlt is, ami majd elndítja az új node-jainkat:
+```xml
+<?xml version="1.0"?>
+<launch>
+    <!-- Add RViz markers -->
+    <node name="add_markers" pkg="bme_ros_navigation" type="add_markers" respawn="false" output="screen">
+    </node>
+
+    <!-- Send navigation goals -->
+    <node name="nav_goals" pkg="bme_ros_navigation" type="nav_goals" respawn="false" output="screen">
+    </node>
+
+</launch>
+```
+
+És próbáljuk is ki az új node-jainkat. Ehhez 3 launchfájlt fogunk összesen elindítani:
 ```console
 roslaunch bme_ros_navigation spawn_robot.launch
 ```
