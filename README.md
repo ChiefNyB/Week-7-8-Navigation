@@ -161,7 +161,12 @@ roslaunch bme_ros_navigation world.launch world_file:='$(find bme_ros_navigation
 ```
 ![alt text][image3]
 
-A robotunkat is betölthetjük a világba, a korábbiakhoz hasonlóan a `spawn_robot.launch` segítségével. Robot betöltése az alap világba:
+A robotunkat is betölthetjük a világba, a korábbiakhoz hasonlóan a `spawn_robot.launch` segítségével. Robot betöltése az alap világba. Azonban előtte még telepítsünk egy új csomagot, amire később részletesen is kitérünk:
+```console
+sudo apt install ros-$(rosversion -d)-robot-pose-ekf
+```
+
+Ezek után indíthatjuk a robotunk szimulációját:
 ```console
 roslaunch bme_ros_navigation spawn_robot.launch
 ```
@@ -193,6 +198,10 @@ roslaunch bme_ros_navigation spawn_robot.launch world:='$(find bme_ros_navigatio
 Próbáljuk ki a távirányítót is, mert kiegészítjük egy új hasznos funkcióval ebben a fejezetben, és ez az `Interactive marker twist server` csomag használata, amit így tudtok telepíteni:
 ```console
 sudo apt install ros-$(rosversion -d)-interactive-marker-twist-server
+```
+A távirányítót a megszokott módon indítjuk el:
+```console
+roslaunch bme_ros_navigation teleop.launch
 ```
 ![alt text][image34]
 
@@ -909,6 +918,11 @@ Ha a waypointokat letettük a waypointok követését a következő service hív
 rosservice call /path_ready {}
 ```
 ![alt text][image50]
+
+Ha pedig törölni akarnánk a waypointokat, akkor megtehetjük a következő service hívással:
+```console
+rosservice call /path_reset {}
+```
 
 ### Patrol mode
 A `follow_waypoints` csomag lehetővé teszi a patrol módot is, tehát a robotunk az utolsó waypoint elérése után kezdi az útvonalat elölről. A patrol módot legegyszerűbben az `rqt_reconfigure` segtségével tudjuk aktiválni.
